@@ -30,6 +30,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/staff/register").permitAll()
                         .requestMatchers("/api/v1/customer/request-otp").permitAll()
                         .requestMatchers("/api/v1/customer/verify-otp").permitAll()
+                        .requestMatchers("/api/v1/menu/items/**").permitAll()
+                        .requestMatchers("/api/v1/menu/categories").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/staff/**").hasAnyRole("ADMIN", "WAITER", "CHEF")
                         .anyRequest().authenticated()
