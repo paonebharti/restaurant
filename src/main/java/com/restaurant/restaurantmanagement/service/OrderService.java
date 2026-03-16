@@ -89,7 +89,12 @@ public class OrderService {
         validateStatusTransition(order.getStatus(), newStatus);
 
         order.setStatus(newStatus);
-        return mapToOrderResponse(orderRepository.save(order));
+        orderRepository.save(order);
+
+        Order updatedOrder = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        return mapToOrderResponse(updatedOrder);
     }
 
     @Transactional
@@ -106,7 +111,13 @@ public class OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
-        return mapToOrderResponse(orderRepository.save(order));
+        orderRepository.save(order);
+
+        // Re-fetch with all associations instead of using save() return value
+        Order updatedOrder = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        return mapToOrderResponse(updatedOrder);
     }
 
     // ─── Helpers ───────────────────────────────────────────
