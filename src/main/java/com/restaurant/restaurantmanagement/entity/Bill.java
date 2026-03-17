@@ -1,15 +1,16 @@
 package com.restaurant.restaurantmanagement.entity;
 
-import com.restaurant.restaurantmanagement.enums.OrderStatus;
+import com.restaurant.restaurantmanagement.enums.BillStatus;
 import jakarta.persistence.*;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @Entity
-@Table(name = "orders")
-public class Order {
+@Table(name = "bill")
+public class Bill {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,30 +24,32 @@ public class Order {
     @JoinColumn(name = "table_id", nullable = false)
     private RestaurantTable table;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bill_id")
-    private Bill bill;
+    @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY)
+    private List<Order> orders;
+
+    @Column(nullable = false)
+    private BigDecimal subtotal;
+
+    @Column(nullable = false)
+    private BigDecimal taxRate;
+
+    @Column(nullable = false)
+    private BigDecimal taxAmount;
+
+    @Column(nullable = false)
+    private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<OrderItem> orderItems;
+    private BillStatus status = BillStatus.UNPAID;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    private LocalDateTime paidAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 }
