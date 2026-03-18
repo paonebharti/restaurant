@@ -48,7 +48,8 @@ public class BillService {
 
         // Fetch all delivered + pending + confirmed + preparing + ready orders
         List<Order> orders = orderRepository
-                .findByTableIdAndStatusNot(customer.getTable().getId(),
+                .findByTableIdAndStatusNotAndBillIsNull(
+                        customer.getTable().getId(),
                         OrderStatus.CANCELLED);
 
         if (orders.isEmpty()) {

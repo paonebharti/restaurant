@@ -3,11 +3,13 @@ package com.restaurant.restaurantmanagement.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@ToString(exclude = {"table"})
 @Entity
 @Table(name = "customer")
 @DiscriminatorValue("CUSTOMER")

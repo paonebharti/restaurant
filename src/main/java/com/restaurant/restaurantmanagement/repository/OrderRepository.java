@@ -36,5 +36,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @org.springframework.data.repository.query.Param("status") OrderStatus status);
     List<Order> findByCustomerId(Long customerId);
     List<Order> findByBillId(Long billId);
-    List<Order> findByTableIdAndStatusNot(Long tableId, OrderStatus status);
+    List<Order> findByTableIdAndStatusNotAndBillIsNull(Long tableId, OrderStatus status);
 }
