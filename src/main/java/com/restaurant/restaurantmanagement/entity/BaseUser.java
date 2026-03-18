@@ -2,6 +2,8 @@ package com.restaurant.restaurantmanagement.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "base_user")
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
+@ToString
 public abstract class BaseUser {
 
     @Id
