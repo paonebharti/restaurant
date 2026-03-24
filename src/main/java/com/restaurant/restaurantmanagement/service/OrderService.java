@@ -5,6 +5,8 @@ import com.restaurant.restaurantmanagement.dto.response.OrderItemResponse;
 import com.restaurant.restaurantmanagement.dto.response.OrderResponse;
 import com.restaurant.restaurantmanagement.entity.*;
 import com.restaurant.restaurantmanagement.enums.OrderStatus;
+import com.restaurant.restaurantmanagement.exception.BadRequestException;
+import com.restaurant.restaurantmanagement.exception.ResourceNotFoundException;
 import com.restaurant.restaurantmanagement.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,11 +39,11 @@ public class OrderService {
         // Create order items
         List<OrderItem> orderItems = request.getItems().stream().map(itemRequest -> {
             MenuItem menuItem = menuItemRepository.findById(itemRequest.getMenuItemId())
-                    .orElseThrow(() -> new RuntimeException("Menu item not found: "
+                    .orElseThrow(() -> new ResourceNotFoundException("Menu item not found: "
                             + itemRequest.getMenuItemId()));
 
             if (!menuItem.isAvailable()) {
-                throw new RuntimeException(menuItem.getName() + " is currently unavailable");
+                throw new BadRequestException(menuItem.getName() + " is currently unavailable");
             }
 
             OrderItem orderItem = new OrderItem();
@@ -83,7 +85,7 @@ public class OrderService {
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, String status) {
         Order order = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         OrderStatus newStatus = OrderStatus.valueOf(status.toUpperCase());
         validateStatusTransition(order.getStatus(), newStatus);
@@ -92,7 +94,7 @@ public class OrderService {
         orderRepository.save(order);
 
         Order updatedOrder = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         return mapToOrderResponse(updatedOrder);
     }
@@ -100,14 +102,14 @@ public class OrderService {
     @Transactional
     public OrderResponse cancelOrder(Long orderId, Customer customer) {
         Order order = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         if (!order.getCustomer().getId().equals(customer.getId())) {
-            throw new RuntimeException("You can only cancel your own orders");
+            throw new ResourceNotFoundException("You can only cancel your own orders");
         }
 
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new RuntimeException("Only PENDING orders can be cancelled");
+            throw new BadRequestException("Only PENDING orders can be cancelled");
         }
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -115,7 +117,7 @@ public class OrderService {
 
         // Re-fetch with all associations instead of using save() return value
         Order updatedOrder = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         return mapToOrderResponse(updatedOrder);
     }
@@ -132,7 +134,7 @@ public class OrderService {
         };
 
         if (!valid) {
-            throw new RuntimeException("Invalid status transition: "
+            throw new BadRequestException("Invalid status transition: "
                     + current + " → " + next);
         }
     }

@@ -8,6 +8,9 @@ import com.restaurant.restaurantmanagement.dto.response.BillResponse;
 import com.restaurant.restaurantmanagement.dto.response.PaymentResponse;
 import com.restaurant.restaurantmanagement.entity.*;
 import com.restaurant.restaurantmanagement.enums.*;
+import com.restaurant.restaurantmanagement.exception.BadRequestException;
+import com.restaurant.restaurantmanagement.exception.ConflictException;
+import com.restaurant.restaurantmanagement.exception.ResourceNotFoundException;
 import com.restaurant.restaurantmanagement.repository.BillRepository;
 import com.restaurant.restaurantmanagement.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,13 +45,13 @@ public class PaymentService {
 
         Bill bill = billRepository
                 .findByCustomerIdAndStatus(customer.getId(), BillStatus.UNPAID)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new BadRequestException(
                         "No active bill found. Please generate bill first."));
 
         // Check payment not already initiated
         paymentRepository.findByBillId(bill.getId()).ifPresent(p -> {
             if (p.getStatus() == PaymentStatus.SUCCESS) {
-                throw new RuntimeException("Payment already completed for this bill");
+                throw new ConflictException("Payment already completed for this bill");
             }
         });
 
@@ -121,7 +124,7 @@ public class PaymentService {
 
         } catch (RazorpayException e) {
             log.error("Razorpay order creation failed: {}", e.getMessage());
-            throw new RuntimeException("Payment initiation failed. Please try again.");
+            throw new BadRequestException("Payment initiation failed. Please try again.");
         }
     }
 
@@ -133,7 +136,7 @@ public class PaymentService {
 
         Payment payment = paymentRepository
                 .findByRazorpayOrderId(request.getRazorpayOrderId())
-                .orElseThrow(() -> new RuntimeException("Payment record not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found"));
 
         // Verify signature — this is the security critical step
         boolean isValid = verifyRazorpaySignature(
@@ -145,7 +148,7 @@ public class PaymentService {
         if (!isValid) {
             payment.setStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);
-            throw new RuntimeException("Payment verification failed. Invalid signature.");
+            throw new BadRequestException("Payment verification failed. Invalid signature.");
         }
 
         // Update payment

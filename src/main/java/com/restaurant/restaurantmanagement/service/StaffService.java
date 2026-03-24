@@ -5,6 +5,8 @@ import com.restaurant.restaurantmanagement.dto.request.StaffRegisterRequest;
 import com.restaurant.restaurantmanagement.dto.response.AuthResponse;
 import com.restaurant.restaurantmanagement.enums.Role;
 import com.restaurant.restaurantmanagement.entity.Staff;
+import com.restaurant.restaurantmanagement.exception.ConflictException;
+import com.restaurant.restaurantmanagement.exception.UnauthorizedException;
 import com.restaurant.restaurantmanagement.repository.StaffRepository;
 import com.restaurant.restaurantmanagement.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,7 @@ public class StaffService {
     public AuthResponse register(StaffRegisterRequest request) {
 
         if (staffRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ConflictException("Email already registered");
         }
 
         Staff staff = new Staff();
@@ -48,14 +50,14 @@ public class StaffService {
     public AuthResponse login(StaffLoginRequest request) {
 
         Staff staff = staffRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), staff.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         if (!staff.isActive()) {
-            throw new RuntimeException("Account is deactivated. Contact admin.");
+            throw new UnauthorizedException("Account is deactivated. Contact admin.");
         }
 
         String token = jwtUtil.generateToken(staff.getEmail(), staff.getRole().name());
