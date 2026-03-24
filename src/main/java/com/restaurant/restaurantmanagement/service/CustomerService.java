@@ -7,6 +7,8 @@ import com.restaurant.restaurantmanagement.dto.response.OtpResponse;
 import com.restaurant.restaurantmanagement.entity.Customer;
 import com.restaurant.restaurantmanagement.entity.RestaurantTable;
 import com.restaurant.restaurantmanagement.enums.TableStatus;
+import com.restaurant.restaurantmanagement.exception.BadRequestException;
+import com.restaurant.restaurantmanagement.exception.ResourceNotFoundException;
 import com.restaurant.restaurantmanagement.repository.CustomerRepository;
 import com.restaurant.restaurantmanagement.repository.RestaurantTableRepository;
 import com.restaurant.restaurantmanagement.util.OtpUtil;
@@ -33,9 +35,8 @@ public class CustomerService {
     public OtpResponse requestOtp(OtpRequest request) {
 
         // Validate table exists
-        RestaurantTable table = tableRepository
-                .findByTableNumber(request.getTableNumber())
-                .orElseThrow(() -> new RuntimeException("Invalid table"));
+        RestaurantTable table = tableRepository.findByTableNumber(request.getTableNumber())
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid table"));
 
         // Check table is available or already occupied by this customer
         if (table.getStatus() == TableStatus.OCCUPIED) {
@@ -43,7 +44,7 @@ public class CustomerService {
             customerRepository.findByPhone(request.getPhone())
                     .ifPresent(existing -> {
                         if (!existing.getTable().getId().equals(table.getId())) {
-                            throw new RuntimeException("Table is currently occupied");
+                            throw new BadRequestException("Table is currently occupied");
                         }
                     });
         }
@@ -74,18 +75,15 @@ public class CustomerService {
 
     public CustomerSessionResponse verifyOtp(OtpVerifyRequest request) {
 
-        Customer customer = customerRepository
-                .findByPhone(request.getPhone())
-                .orElseThrow(() -> new RuntimeException("Phone number not found"));
+        Customer customer = customerRepository.findByPhone(request.getPhone())
+                .orElseThrow(() -> new ResourceNotFoundException("Phone number not found"));
 
-        // Check OTP matches
         if (!customer.getOtp().equals(request.getOtp())) {
-            throw new RuntimeException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP");
         }
 
-        // Check OTP not expired
         if (LocalDateTime.now().isAfter(customer.getOtpExpiry())) {
-            throw new RuntimeException("OTP has expired. Please request a new one.");
+            throw new BadRequestException("OTP has expired. Please request a new one.");
         }
 
         // Generate session token

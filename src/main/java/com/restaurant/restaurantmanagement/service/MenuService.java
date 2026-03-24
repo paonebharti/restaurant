@@ -7,6 +7,8 @@ import com.restaurant.restaurantmanagement.dto.response.MenuItemResponse;
 import com.restaurant.restaurantmanagement.enums.FoodType;
 import com.restaurant.restaurantmanagement.entity.MenuCategory;
 import com.restaurant.restaurantmanagement.entity.MenuItem;
+import com.restaurant.restaurantmanagement.exception.ConflictException;
+import com.restaurant.restaurantmanagement.exception.ResourceNotFoundException;
 import com.restaurant.restaurantmanagement.repository.MenuCategoryRepository;
 import com.restaurant.restaurantmanagement.repository.MenuItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +28,7 @@ public class MenuService {
 
     public MenuCategoryResponse addCategory(MenuCategoryRequest request) {
         if (categoryRepository.findByName(request.getName()).isPresent()) {
-            throw new RuntimeException("Category already exists");
+            throw new ConflictException("Category already exists");
         }
 
         MenuCategory category = new MenuCategory();
@@ -46,7 +48,7 @@ public class MenuService {
 
     public MenuCategoryResponse updateCategory(Long id, MenuCategoryRequest request) {
         MenuCategory category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         category.setName(request.getName());
         category.setDescription(request.getDescription());
@@ -56,7 +58,7 @@ public class MenuService {
 
     public void deleteCategory(Long id) {
         MenuCategory category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         category.setActive(false);
         categoryRepository.save(category);
     }
@@ -65,7 +67,7 @@ public class MenuService {
 
     public MenuItemResponse addItem(MenuItemRequest request) {
         MenuCategory category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         MenuItem item = new MenuItem();
         item.setName(request.getName());
@@ -102,10 +104,10 @@ public class MenuService {
 
     public MenuItemResponse updateItem(Long id, MenuItemRequest request) {
         MenuItem item = itemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
 
         MenuCategory category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         item.setName(request.getName());
         item.setDescription(request.getDescription());
@@ -119,7 +121,7 @@ public class MenuService {
 
     public void toggleItemAvailability(Long id) {
         MenuItem item = itemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         item.setAvailable(!item.isAvailable());
         itemRepository.save(item);
     }

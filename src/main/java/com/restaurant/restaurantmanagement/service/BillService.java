@@ -7,6 +7,9 @@ import com.restaurant.restaurantmanagement.entity.*;
 import com.restaurant.restaurantmanagement.enums.BillStatus;
 import com.restaurant.restaurantmanagement.enums.OrderStatus;
 import com.restaurant.restaurantmanagement.enums.TableStatus;
+import com.restaurant.restaurantmanagement.exception.BadRequestException;
+import com.restaurant.restaurantmanagement.exception.ConflictException;
+import com.restaurant.restaurantmanagement.exception.ResourceNotFoundException;
 import com.restaurant.restaurantmanagement.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +45,7 @@ public class BillService {
         // Check if bill already exists for this customer
         billRepository.findByCustomerIdAndStatus(customer.getId(), BillStatus.UNPAID)
                 .ifPresent(existing -> {
-                    throw new RuntimeException("Bill already generated. Bill ID: "
+                    throw new ConflictException("Bill already generated. Bill ID: "
                             + existing.getId());
                 });
 
@@ -53,7 +56,7 @@ public class BillService {
                         OrderStatus.CANCELLED);
 
         if (orders.isEmpty()) {
-            throw new RuntimeException("No orders found for this table");
+            throw new BadRequestException("No orders found for this table");
         }
 
         // Calculate subtotal
@@ -102,7 +105,7 @@ public class BillService {
     public BillResponse getBill(Customer customer) {
         Bill bill = billRepository
                 .findByCustomerIdAndStatus(customer.getId(), BillStatus.UNPAID)
-                .orElseThrow(() -> new RuntimeException("No active bill found"));
+                .orElseThrow(() -> new ResourceNotFoundException("No active bill found"));
 
         List<Order> orders = orderRepository.findByBillId(bill.getId());
         bill.setOrders(orders);
@@ -117,7 +120,7 @@ public class BillService {
 
         Bill bill = billRepository
                 .findByCustomerIdAndStatus(customer.getId(), BillStatus.UNPAID)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new BadRequestException(
                         "No active bill found. Please generate bill first."));
 
         // Mark bill as paid
